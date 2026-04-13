@@ -2,10 +2,15 @@
 const admin = require('firebase-admin');
 require('dotenv').config();
 
+const rawKey = process.env.FIREBASE_PRIVATE_KEY || '';
 console.log('ENV CHECK:', {
-  HAS_FIREBASE_PRIVATE_KEY: !!process.env.FIREBASE_PRIVATE_KEY,
+  HAS_FIREBASE_PRIVATE_KEY: !!rawKey,
   HAS_FIREBASE_PROJECT_ID: !!process.env.FIREBASE_PROJECT_ID,
   HAS_FIREBASE_CLIENT_EMAIL: !!process.env.FIREBASE_CLIENT_EMAIL,
+  KEY_LENGTH: rawKey.length,
+  KEY_START: rawKey.substring(0, 40),
+  HAS_LITERAL_NEWLINE: rawKey.includes('\\n'),
+  HAS_ACTUAL_NEWLINE: rawKey.includes('\n'),
 });
 
 let serviceAccount;
