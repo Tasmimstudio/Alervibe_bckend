@@ -2,6 +2,12 @@
 const admin = require('firebase-admin');
 require('dotenv').config();
 
+console.log('ENV CHECK:', {
+  HAS_FIREBASE_PRIVATE_KEY: !!process.env.FIREBASE_PRIVATE_KEY,
+  HAS_FIREBASE_PROJECT_ID: !!process.env.FIREBASE_PROJECT_ID,
+  HAS_FIREBASE_CLIENT_EMAIL: !!process.env.FIREBASE_CLIENT_EMAIL,
+});
+
 let serviceAccount;
 if (process.env.FIREBASE_PRIVATE_KEY) {
   // Individual env vars (recommended for cloud platforms like Render)
