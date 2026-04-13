@@ -4,8 +4,17 @@ require('dotenv').config();
 
 let serviceAccount;
 if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON.replace(/\n/g, '\\n');
-  serviceAccount = JSON.parse(raw);
+  try {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+  } catch (e) {
+    serviceAccount = JSON.parse(
+      process.env.FIREBASE_SERVICE_ACCOUNT_JSON.replace(/\n/g, '\\n')
+    );
+  }
+  // Ensure private key has actual newlines (not escaped \n text)
+  if (serviceAccount.private_key) {
+    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+  }
 } else {
   // Local development fallback
   const path = require('path');
