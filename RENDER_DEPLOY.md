@@ -31,18 +31,29 @@
 
 ## Step 3 — Add Environment Variables
 
-In the **Environment** section, add the following variables:
+In the **Environment** section, click **Add Environment Variable** for each row below:
 
 | Key | Value |
 |---|---|
 | `NODE_ENV` | `production` |
 | `PORT` | `4000` |
-| `FIREBASE_SERVICE_ACCOUNT_JSON` | *(see note below)* |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | *(paste the full JSON — see below)* |
 | `CLOUDINARY_CLOUD_NAME` | Your Cloudinary cloud name |
 | `CLOUDINARY_API_KEY` | Your Cloudinary API key |
 | `CLOUDINARY_API_SECRET` | Your Cloudinary API secret |
 
-> **FIREBASE_SERVICE_ACCOUNT_JSON** — Open your `alertvibe-d6892-firebase-adminsdk-fbsvc-....json` file and paste its **entire contents** as the value. Render will store it securely.
+### FIREBASE_SERVICE_ACCOUNT_JSON
+
+1. Open your local file: `config/alertvibe-d6892-firebase-adminsdk-fbsvc-....json`
+2. Copy the **entire file contents**
+3. Paste it as a single line into the value field on Render
+
+It should look like this format:
+```
+{"type":"service_account","project_id":"alertvibe-d6892","private_key_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...","client_email":"..."}
+```
+
+> Never commit this JSON to GitHub — keep it only in Render's environment settings.
 
 ---
 
