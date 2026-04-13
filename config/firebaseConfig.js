@@ -4,7 +4,8 @@ require('dotenv').config();
 
 let serviceAccount;
 if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON.replace(/\n/g, '\\n');
+  serviceAccount = JSON.parse(raw);
 } else {
   // Local development fallback
   const path = require('path');
