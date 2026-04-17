@@ -14,8 +14,11 @@ console.log('ENV CHECK:', {
 });
 
 let serviceAccount;
-if (process.env.FIREBASE_PRIVATE_KEY) {
-  // Individual env vars (recommended for cloud platforms like Render)
+if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+  // Render: full service account JSON stored as a single env var
+  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+} else if (process.env.FIREBASE_PRIVATE_KEY) {
+  // Individual env vars fallback
   serviceAccount = {
     type: 'service_account',
     project_id: process.env.FIREBASE_PROJECT_ID,
@@ -30,9 +33,9 @@ if (process.env.FIREBASE_PRIVATE_KEY) {
     universe_domain: 'googleapis.com',
   };
 } else {
-  // Local development fallback
+  // Local development fallback — reads serviceAccountKey.json
   const path = require('path');
-  const saPath = process.env.FIREBASE_SA_PATH || './config/alertvibe-d6892-firebase-adminsdk-fbsvc-1b78c03be3.json';
+  const saPath = process.env.FIREBASE_SA_PATH || './serviceAccountKey.json';
   serviceAccount = require(path.resolve(saPath));
 }
 
