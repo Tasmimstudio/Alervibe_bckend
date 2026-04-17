@@ -22,10 +22,21 @@ async function createAlert(req, res, next) {
     const docRef = await db.collection(ALERTS_COLLECTION).add(data);
 
     // Send FCM - here we broadcast to a topic "security"
+    const notifTitles = {
+      critical: 'CRITICAL ALERT - Motorcycle Under Attack!',
+      high:     'TAMPERING ALERT - Your Motorcycle!',
+      medium:   'Vibration Detected on Your Motorcycle',
+    };
+    const notifBodies = {
+      critical: `Extreme vibration detected on ${deviceId}. Immediate action required!`,
+      high:     `Strong vibration detected on ${deviceId}. Possible tampering in progress!`,
+      medium:   `Low-level vibration detected on ${deviceId}. Stay alert.`,
+    };
+
     const payload = {
       notification: {
-        title: 'ALERTVIBE - Possible Tampering',
-        body: message
+        title: notifTitles[severity] || notifTitles.high,
+        body:  notifBodies[severity] || message,
       },
       data: {
         deviceId,
@@ -111,6 +122,14 @@ async function saveToken(req, res, next) {
 
     // Save token to Firestore (using token as document ID to prevent duplicates)
     await db.collection(TOKENS_COLLECTION).doc(token).set(data, { merge: true });
+
+    // Subscribe token to "security" topic so it receives all alerts
+    try {
+      await messaging.subscribeToTopic([token], 'security');
+      console.log('Token subscribed to security topic');
+    } catch (topicErr) {
+      console.warn('Topic subscription failed:', topicErr.message);
+    }
 
     console.log('Token saved:', token);
     res.json({ message: 'Token saved successfully' });
