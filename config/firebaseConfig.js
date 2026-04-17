@@ -36,7 +36,14 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
   // Local development fallback — reads serviceAccountKey.json
   const path = require('path');
   const saPath = process.env.FIREBASE_SA_PATH || './serviceAccountKey.json';
-  serviceAccount = require(path.resolve(saPath));
+  try {
+    serviceAccount = require(path.resolve(saPath));
+  } catch (e) {
+    throw new Error(
+      'Firebase credentials not found. Set FIREBASE_SERVICE_ACCOUNT_JSON env var on Render, ' +
+      'or place serviceAccountKey.json in the backend root for local development.'
+    );
+  }
 }
 
 admin.initializeApp({
