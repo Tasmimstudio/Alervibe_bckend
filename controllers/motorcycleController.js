@@ -45,6 +45,11 @@ exports.listMotorcycles = async (req, res) => {
 
     if (ownerId) {
       query = query.where('ownerId', '==', ownerId);
+      const snapshot = await query.get();
+      const motorcycles = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      return res.json({ motorcycles });
     }
 
     const snapshot = await query.orderBy('createdAt', 'desc').get();
