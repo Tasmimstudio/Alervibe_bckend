@@ -23,6 +23,10 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
     // Literal newlines in private key from copy-paste — escape every one and retry
     serviceAccount = JSON.parse(raw.replace(/\r?\n/g, '\\n'));
   }
+  // Render stores \n as literal backslash-n — convert to actual newlines for PEM parsing
+  if (serviceAccount.private_key) {
+    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+  }
 } else if (process.env.FIREBASE_PRIVATE_KEY) {
   // Individual env vars fallback
   serviceAccount = {
