@@ -1,6 +1,5 @@
 // controllers/motorcycleController.js
-const { getFirestore } = require('firebase-admin/firestore');
-const db = getFirestore();
+const { db } = require('../config/firebaseConfig');
 
 // Create/Register a new motorcycle
 exports.registerMotorcycle = async (req, res) => {

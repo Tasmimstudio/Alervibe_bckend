@@ -1,6 +1,6 @@
 // controllers/adminController.js
 const { db, auth, admin } = require('../config/firebaseConfig');
-const { FieldPath } = require('firebase-admin/firestore');
+const { FieldPath, FieldValue } = require('firebase-admin/firestore');
 
 const USERS_COLLECTION = 'users';
 const ALERTS_COLLECTION = 'alerts';
@@ -78,7 +78,7 @@ async function updateUserRole(req, res, next) {
 
     await db.collection(USERS_COLLECTION).doc(userId).update({
       role,
-      updatedAt: db.FieldValue ? db.FieldValue.serverTimestamp() : new Date()
+      updatedAt: FieldValue.serverTimestamp()
     });
 
     // Set custom claims in Firebase Auth
@@ -109,7 +109,7 @@ async function toggleUserStatus(req, res, next) {
 
     await db.collection(USERS_COLLECTION).doc(userId).update({
       active,
-      updatedAt: db.FieldValue ? db.FieldValue.serverTimestamp() : new Date()
+      updatedAt: FieldValue.serverTimestamp()
     });
 
     // Disable/Enable user in Firebase Auth
@@ -156,26 +156,26 @@ async function getAllUsers(req, res, next) {
 
     let query = db.collection(USERS_COLLECTION);
 
+    const hasFilter = role !== undefined || active !== undefined;
+
     // Apply filters
     if (role) {
       query = query.where('role', '==', role);
     }
-
     if (active !== undefined) {
       query = query.where('active', '==', active === 'true');
     }
 
-    // Apply pagination
-    const snapshot = await query
-      .orderBy('createdAt', 'desc')
-      .limit(parseInt(limit))
-      .offset(parseInt(offset))
-      .get();
+    // Only use orderBy when there are no where-filters (avoids composite index requirement)
+    if (!hasFilter) {
+      query = query.orderBy('createdAt', 'desc');
+    }
 
-    const users = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const snapshot = await query.limit(parseInt(limit)).offset(parseInt(offset)).get();
+
+    const users = snapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     res.json({ users, count: users.length });
   } catch (err) {
@@ -190,30 +190,29 @@ async function getAllAlerts(req, res, next) {
 
     let query = db.collection(ALERTS_COLLECTION);
 
+    const hasFilter = deviceId !== undefined || severity !== undefined || responded !== undefined;
+
     // Apply filters
     if (deviceId) {
       query = query.where('deviceId', '==', deviceId);
     }
-
     if (severity) {
       query = query.where('severity', '==', severity);
     }
-
     if (responded !== undefined) {
       query = query.where('responded', '==', responded === 'true');
     }
 
-    // Apply pagination
-    const snapshot = await query
-      .orderBy('timestamp', 'desc')
-      .limit(parseInt(limit))
-      .offset(parseInt(offset))
-      .get();
+    // Only use orderBy when no where-filters (avoids composite index requirement)
+    if (!hasFilter) {
+      query = query.orderBy('timestamp', 'desc');
+    }
 
-    const alerts = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const snapshot = await query.limit(parseInt(limit)).offset(parseInt(offset)).get();
+
+    const alerts = snapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     res.json({ alerts, count: alerts.length });
   } catch (err) {
@@ -226,7 +225,7 @@ async function markAlertResponded(req, res, next) {
   try {
     const { alertId } = req.params;
     const { responded = true, respondedBy, notes } = req.body;
-    const serverTimestamp = admin.firestore.FieldValue.serverTimestamp();
+    const serverTimestamp = FieldValue.serverTimestamp();
 
     let updateData;
 
