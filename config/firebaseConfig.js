@@ -20,12 +20,8 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
   try {
     serviceAccount = JSON.parse(raw);
   } catch (e) {
-    // Private key may contain literal newlines from copy-paste — fix and retry
-    const fixed = raw.replace(
-      /("private_key"\s*:\s*")([\s\S]*?)("[\s,}])/,
-      (_, prefix, key, suffix) => prefix + key.replace(/\r?\n/g, '\\n') + suffix
-    );
-    serviceAccount = JSON.parse(fixed);
+    // Literal newlines in private key from copy-paste — escape every one and retry
+    serviceAccount = JSON.parse(raw.replace(/\r?\n/g, '\\n'));
   }
 } else if (process.env.FIREBASE_PRIVATE_KEY) {
   // Individual env vars fallback
