@@ -24,8 +24,89 @@ const MOTORCYCLE_MODELS = [
   'Motorstar Xplorer',
 ];
 
-exports.listMotorcycleModels = (req, res) => {
-  res.json({ models: MOTORCYCLE_MODELS });
+exports.listMotorcycleModels = async (req, res) => {
+  try {
+    const snapshot = await db.collection('motorcycle_models').get();
+
+    if (snapshot.empty) {
+      // Seed Firestore with the default list on first call
+      const batch = db.batch();
+      MOTORCYCLE_MODELS.forEach(name => {
+        batch.set(db.collection('motorcycle_models').doc(), {
+          name,
+          createdAt: new Date().toISOString(),
+        });
+      });
+      await batch.commit();
+      const seeded = await db.collection('motorcycle_models').get();
+      const list = seeded.docs
+        .map(d => ({ id: d.id, name: d.data().name }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      return res.json({ models: list.map(m => m.name), modelList: list });
+    }
+
+    const list = snapshot.docs
+      .map(d => ({ id: d.id, name: d.data().name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    res.json({ models: list.map(m => m.name), modelList: list });
+  } catch (error) {
+    console.error('Error listing motorcycle models:', error);
+    res.json({ models: MOTORCYCLE_MODELS, modelList: [] });
+  }
+};
+
+exports.addMotorcycleModel = async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Model name is required' });
+    }
+    const ref = await db.collection('motorcycle_models').add({
+      name: name.trim(),
+      createdAt: new Date().toISOString(),
+    });
+    res.status(201).json({ model: { id: ref.id, name: name.trim() } });
+  } catch (error) {
+    console.error('Error adding motorcycle model:', error);
+    res.status(500).json({ error: 'Failed to add model' });
+  }
+};
+
+exports.updateMotorcycleModel = async (req, res) => {
+  try {
+    const { modelId } = req.params;
+    const { name } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Model name is required' });
+    }
+    const doc = await db.collection('motorcycle_models').doc(modelId).get();
+    if (!doc.exists) {
+      return res.status(404).json({ error: 'Model not found' });
+    }
+    await db.collection('motorcycle_models').doc(modelId).update({
+      name: name.trim(),
+      updatedAt: new Date().toISOString(),
+    });
+    res.json({ model: { id: modelId, name: name.trim() } });
+  } catch (error) {
+    console.error('Error updating motorcycle model:', error);
+    res.status(500).json({ error: 'Failed to update model' });
+  }
+};
+
+exports.deleteMotorcycleModel = async (req, res) => {
+  try {
+    const { modelId } = req.params;
+    const doc = await db.collection('motorcycle_models').doc(modelId).get();
+    if (!doc.exists) {
+      return res.status(404).json({ error: 'Model not found' });
+    }
+    await db.collection('motorcycle_models').doc(modelId).delete();
+    res.json({ message: 'Model deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting motorcycle model:', error);
+    res.status(500).json({ error: 'Failed to delete model' });
+  }
 };
 
 // Create/Register a new motorcycle
@@ -226,6 +307,70 @@ exports.uploadPhoto = async (req, res) => {
   } catch (error) {
     console.error('Error uploading motorcycle photo:', error);
     res.status(500).json({ error: 'Failed to upload motorcycle photo' });
+  }
+};
+
+// Update WiFi credentials for a motorcycle device
+exports.updateWifiConfig = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { ssid, password } = req.body;
+
+    if (!ssid || !ssid.trim()) {
+      return res.status(400).json({ error: 'SSID is required' });
+    }
+
+    const doc = await db.collection('motorcycles').doc(id).get();
+    if (!doc.exists) {
+      return res.status(404).json({ error: 'Motorcycle not found' });
+    }
+
+    const data = doc.data();
+    if (data.ownerId !== req.user.uid) {
+      return res.status(403).json({ error: 'Not authorized to update this motorcycle' });
+    }
+
+    await db.collection('motorcycles').doc(id).update({
+      wifiSsid: ssid.trim(),
+      wifiPassword: password || '',
+      wifiUpdatedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    res.json({ message: 'WiFi configuration updated successfully' });
+  } catch (error) {
+    console.error('Error updating WiFi config:', error);
+    res.status(500).json({ error: 'Failed to update WiFi config' });
+  }
+};
+
+// Get WiFi config for a device — called by ESP32 on startup/poll
+exports.getWifiConfig = async (req, res) => {
+  try {
+    const { deviceId } = req.query;
+
+    if (!deviceId) {
+      return res.status(400).json({ error: 'deviceId is required' });
+    }
+
+    const snapshot = await db.collection('motorcycles')
+      .where('deviceCode', '==', deviceId)
+      .limit(1)
+      .get();
+
+    if (snapshot.empty) {
+      return res.json({ ssid: null, password: null });
+    }
+
+    const data = snapshot.docs[0].data();
+    res.json({
+      ssid: data.wifiSsid || null,
+      password: data.wifiPassword || null,
+      updatedAt: data.wifiUpdatedAt || null,
+    });
+  } catch (error) {
+    console.error('Error getting WiFi config:', error);
+    res.status(500).json({ error: 'Failed to get WiFi config' });
   }
 };
 
