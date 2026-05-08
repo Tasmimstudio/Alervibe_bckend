@@ -177,7 +177,28 @@ async function getAllUsers(req, res, next) {
       .map(doc => ({ id: doc.id, ...doc.data() }))
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    res.json({ users, count: users.length });
+    const motorcyclesSnapshot = await db.collection('motorcycles').get();
+    const motorcyclesByOwner = {};
+    motorcyclesSnapshot.docs.forEach(doc => {
+      const motorcycle = { id: doc.id, ...doc.data() };
+      if (!motorcycle.ownerId) return;
+      if (!motorcyclesByOwner[motorcycle.ownerId]) {
+        motorcyclesByOwner[motorcycle.ownerId] = [];
+      }
+      motorcyclesByOwner[motorcycle.ownerId].push(motorcycle);
+    });
+
+    Object.values(motorcyclesByOwner).forEach(list => {
+      list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    });
+
+    const usersWithMotorcycles = users.map(user => ({
+      ...user,
+      motorcycles: motorcyclesByOwner[user.id] || [],
+      motorcycle: motorcyclesByOwner[user.id]?.[0] || null,
+    }));
+
+    res.json({ users: usersWithMotorcycles, count: usersWithMotorcycles.length });
   } catch (err) {
     next(err);
   }

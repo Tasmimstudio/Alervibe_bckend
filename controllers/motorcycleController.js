@@ -1,10 +1,37 @@
 // controllers/motorcycleController.js
 const { db } = require('../config/firebaseConfig');
 
+const MOTORCYCLE_MODELS = [
+  'Honda Click 125i',
+  'Honda Click 160',
+  'Honda Beat',
+  'Honda Wave 110 Alpha',
+  'Honda XRM 125',
+  'Honda TMX 125 Alpha',
+  'Yamaha Mio i 125',
+  'Yamaha Mio Gear',
+  'Yamaha Mio Soul i 125',
+  'Yamaha NMAX',
+  'Yamaha Aerox 155',
+  'Suzuki Smash 115',
+  'Suzuki Raider R150',
+  'Suzuki Burgman Street',
+  'Kawasaki Barako II',
+  'Kawasaki Rouser NS160',
+  'Kawasaki Rouser NS200',
+  'Rusi Classic 250',
+  'Rusi Flash 150',
+  'Motorstar Xplorer',
+];
+
+exports.listMotorcycleModels = (req, res) => {
+  res.json({ models: MOTORCYCLE_MODELS });
+};
+
 // Create/Register a new motorcycle
 exports.registerMotorcycle = async (req, res) => {
   try {
-    const { plateNumber, model, color, deviceCode, department, ownerId, ownerName } = req.body;
+    const { plateNumber, model, color, deviceCode, department, parkingLocation, ownerName } = req.body;
 
     if (!plateNumber || !model || !color || !deviceCode) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -16,8 +43,9 @@ exports.registerMotorcycle = async (req, res) => {
       color,
       deviceCode,
       department: department || null,
-      ownerId: ownerId || req.user?.uid || null,
-      ownerName: ownerName || req.user?.displayName || null,
+      parkingLocation: parkingLocation || null,
+      ownerId: req.user?.uid || null,
+      ownerName: ownerName || req.user?.profile?.displayName || req.user?.email || null,
       photoURL: req.body.photoURL || null,
       status: 'active',
       isActivated: true,
@@ -39,7 +67,7 @@ exports.registerMotorcycle = async (req, res) => {
 // Get all motorcycles
 exports.listMotorcycles = async (req, res) => {
   try {
-    const { ownerId } = req.query;
+    const ownerId = req.query.ownerId || req.user?.uid;
     let query = db.collection('motorcycles');
 
     if (ownerId) {

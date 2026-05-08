@@ -6,6 +6,7 @@ const { authenticate } = require('../middleware/authMiddleware');
 const { motorcyclePhoto } = require('../middleware/upload');
 
 // Public routes
+router.get('/models', controller.listMotorcycleModels); // GET /api/motorcycles/models
 router.get('/search', controller.searchByPlate);  // GET /api/motorcycles/search?plateNumber=ABC
 
 // Protected routes
