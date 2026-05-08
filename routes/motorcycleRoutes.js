@@ -25,5 +25,6 @@ router.put('/:id/activate', authenticate, controller.toggleActivation);  // PUT 
 router.put('/:id/location', authenticate, controller.updateLocation);    // PUT /api/motorcycles/:id/location
 router.post('/:id/photo', authenticate, motorcyclePhoto.single('photo'), controller.uploadPhoto); // POST /api/motorcycles/:id/photo
 router.put('/:id/wifi', authenticate, controller.updateWifiConfig); // PUT /api/motorcycles/:id/wifi
+router.put('/:id/note', authenticate, controller.updateParkingNote); // PUT /api/motorcycles/:id/note
 
 module.exports = router;

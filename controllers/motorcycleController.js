@@ -310,6 +310,36 @@ exports.uploadPhoto = async (req, res) => {
   }
 };
 
+// Update parking note for a motorcycle
+exports.updateParkingNote = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { note } = req.body;
+
+    const doc = await db.collection('motorcycles').doc(id).get();
+    if (!doc.exists) {
+      return res.status(404).json({ error: 'Motorcycle not found' });
+    }
+
+    const data = doc.data();
+    if (data.ownerId !== req.user.uid) {
+      return res.status(403).json({ error: 'Not authorized to update this motorcycle' });
+    }
+
+    const now = new Date().toISOString();
+    await db.collection('motorcycles').doc(id).update({
+      parkingNote: (note || '').trim(),
+      parkingNoteUpdatedAt: now,
+      updatedAt: now,
+    });
+
+    res.json({ message: 'Parking note updated', parkingNoteUpdatedAt: now });
+  } catch (error) {
+    console.error('Error updating parking note:', error);
+    res.status(500).json({ error: 'Failed to update parking note' });
+  }
+};
+
 // Update WiFi credentials for a motorcycle device
 exports.updateWifiConfig = async (req, res) => {
   try {
