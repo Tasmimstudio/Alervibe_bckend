@@ -15,6 +15,7 @@ router.get('/dashboard', controller.getDashboardStats);        // GET /api/admin
 router.get('/users', controller.getAllUsers);                  // GET /api/admin/users
 router.put('/users/:userId/role', controller.updateUserRole);  // PUT /api/admin/users/:userId/role
 router.put('/users/:userId/status', controller.toggleUserStatus); // PUT /api/admin/users/:userId/status
+router.put('/users/:userId/password', controller.resetUserPassword); // PUT /api/admin/users/:userId/password
 router.delete('/users/:userId', controller.deleteUser);        // DELETE /api/admin/users/:userId
 
 // Alert Management

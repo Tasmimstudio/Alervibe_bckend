@@ -125,6 +125,24 @@ async function toggleUserStatus(req, res, next) {
   }
 }
 
+// Reset user password (admin only)
+async function resetUserPassword(req, res, next) {
+  try {
+    const { userId } = req.params;
+    const { password } = req.body;
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    await auth.updateUser(userId, { password });
+
+    res.json({ message: 'Password updated successfully', userId });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Delete user
 async function deleteUser(req, res, next) {
   try {
@@ -391,6 +409,7 @@ module.exports = {
   getDashboardStats,
   updateUserRole,
   toggleUserStatus,
+  resetUserPassword,
   deleteUser,
   getAllUsers,
   getAllAlerts,
