@@ -23,7 +23,12 @@ router.put('/:id', authenticate, controller.updateMotorcycle);           // PUT 
 router.delete('/:id', authenticate, controller.deleteMotorcycle);        // DELETE /api/motorcycles/:id
 router.put('/:id/activate', authenticate, controller.toggleActivation);  // PUT /api/motorcycles/:id/activate
 router.put('/:id/location', authenticate, controller.updateLocation);    // PUT /api/motorcycles/:id/location
-router.post('/:id/photo', authenticate, motorcyclePhoto.single('photo'), controller.uploadPhoto); // POST /api/motorcycles/:id/photo
+router.post('/:id/photo', authenticate, (req, res, next) => {
+  motorcyclePhoto.single('photo')(req, res, (err) => {
+    if (err) return res.status(500).json({ error: err.message || 'Upload failed' });
+    next();
+  });
+}, controller.uploadPhoto); // POST /api/motorcycles/:id/photo
 router.put('/:id/wifi', authenticate, controller.updateWifiConfig); // PUT /api/motorcycles/:id/wifi
 router.put('/:id/note', authenticate, controller.updateParkingNote); // PUT /api/motorcycles/:id/note
 

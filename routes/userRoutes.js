@@ -13,7 +13,12 @@ router.post('/setup-admin', controller.setupAdmin);   // POST /api/users/setup-a
 // Protected routes (require authentication)
 router.get('/profile', authenticate, controller.getProfile);        // GET /api/users/profile
 router.put('/profile', authenticate, controller.updateProfile);     // PUT /api/users/profile
-router.put('/profile/photo', authenticate, profilePhoto.single('photo'), controller.uploadProfilePhoto); // PUT /api/users/profile/photo
+router.put('/profile/photo', authenticate, (req, res, next) => {
+  profilePhoto.single('photo')(req, res, (err) => {
+    if (err) return res.status(500).json({ error: err.message || 'Upload failed' });
+    next();
+  });
+}, controller.uploadProfilePhoto); // PUT /api/users/profile/photo
 router.get('/role', authenticate, controller.getRole);              // GET /api/users/role - get current user's role
 router.get('/:id', authenticate, controller.getUserById);           // GET /api/users/:id
 router.get('/', authenticate, controller.listUsers);                // GET /api/users
