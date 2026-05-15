@@ -365,7 +365,8 @@ async function getMotorcyclesWithOwners(req, res, next) {
           ownerMap[doc.id] = {
             phoneNumber: data.phoneNumber || null,
             email: data.email || null,
-            displayName: data.displayName || data.name || null
+            displayName: data.displayName || data.name || null,
+            photoURL: data.photoURL || null,
           };
         });
       }
@@ -376,7 +377,8 @@ async function getMotorcyclesWithOwners(req, res, next) {
       ...m,
       ownerPhone: ownerMap[m.ownerId]?.phoneNumber || null,
       ownerEmail: ownerMap[m.ownerId]?.email || null,
-      ownerName: m.ownerName || ownerMap[m.ownerId]?.displayName || 'Unknown'
+      ownerName: m.ownerName || ownerMap[m.ownerId]?.displayName || 'Unknown',
+      ownerPhotoURL: ownerMap[m.ownerId]?.photoURL || null,
     }));
 
     res.json({ motorcycles: enriched, count: enriched.length });
