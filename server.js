@@ -18,7 +18,6 @@ async function createDefaultAdmin() {
   const ADMIN_NAME = 'System Admin';
 
   try {
-    // Check if admin already exists in Firestore
     const usersRef = db.collection('users');
     const adminQuery = await usersRef.where('role', '==', 'admin').limit(1).get();
 
@@ -27,14 +26,12 @@ async function createDefaultAdmin() {
       return;
     }
 
-    // Try to get existing user or create new one
     let userRecord;
     try {
       userRecord = await auth.getUserByEmail(ADMIN_EMAIL);
       console.log('Admin auth user already exists');
     } catch (error) {
       if (error.code === 'auth/user-not-found') {
-        // Create new admin user in Firebase Auth
         userRecord = await auth.createUser({
           email: ADMIN_EMAIL,
           password: ADMIN_PASSWORD,
@@ -46,7 +43,6 @@ async function createDefaultAdmin() {
       }
     }
 
-    // Create admin profile in Firestore
     await usersRef.doc(userRecord.uid).set({
       uid: userRecord.uid,
       email: ADMIN_EMAIL,
@@ -71,33 +67,13 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'https://alertvibefrontend.vercel.app',
 ];
-/*const ALLOWED_ORIGINS = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  process.env.FRONTEND_URL,
-].filter(Boolean);*/
 
-const app = express();
-/*app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, Postman)
-    if (!origin) return callback(null, true);
-    // Allow any Vercel deployment URL or explicitly listed origins
-    if (ALLOWED_ORIGINS.includes(origin) || /\.vercel\.app$/.test(origin)) {
-      return callback(null, true);
-    }
-    callback(new Error(`CORS: origin ${origin} not allowed`));
-  },
-  credentials: true,
-}));*/
 const app = express();
 
 app.use(cors({
   origin: ALLOWED_ORIGINS,
   credentials: true
 }));
-
-app.use(express.json());
 
 app.use(express.json());
 app.use(morgan('dev'));
@@ -118,7 +94,6 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 4000;
 
-// Create admin before starting server
 createDefaultAdmin().then(() => {
   app.listen(PORT, () => {
     console.log(`Server listening on ${PORT}`);
