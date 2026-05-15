@@ -57,8 +57,38 @@ async function createAlert(req, res, next) {
 
 async function listAlerts(req, res, next) {
   try {
-    const snap = await db.collection(ALERTS_COLLECTION).orderBy('timestamp', 'desc').limit(200).get();
-    const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const role = req.user?.role;
+
+    // Admins and security see every alert
+    if (role === 'admin' || role === 'security') {
+      const snap = await db.collection(ALERTS_COLLECTION).orderBy('timestamp', 'desc').limit(200).get();
+      return res.json(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }
+
+    // Regular users only see alerts for their own motorcycle(s)
+    const uid = req.user?.uid;
+    if (!uid) return res.json([]);
+
+    const motoSnap = await db.collection('motorcycles').where('ownerId', '==', uid).get();
+    if (motoSnap.empty) return res.json([]);
+
+    const deviceCodes = motoSnap.docs.map(d => d.data().deviceCode).filter(Boolean);
+    if (deviceCodes.length === 0) return res.json([]);
+
+    // Firestore 'in' supports up to 30 values; sort client-side to avoid composite index
+    const snap = await db.collection(ALERTS_COLLECTION)
+      .where('deviceId', 'in', deviceCodes.slice(0, 30))
+      .limit(200)
+      .get();
+
+    const items = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => {
+        const ta = a.timestamp?._seconds ?? (a.timestamp ? new Date(a.timestamp).getTime() / 1000 : 0);
+        const tb = b.timestamp?._seconds ?? (b.timestamp ? new Date(b.timestamp).getTime() / 1000 : 0);
+        return tb - ta;
+      });
+
     res.json(items);
   } catch (err) { next(err); }
 }
