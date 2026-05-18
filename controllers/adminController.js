@@ -115,10 +115,19 @@ async function toggleUserStatus(req, res, next) {
     // Disable/Enable user in Firebase Auth
     await auth.updateUser(userId, { disabled: !active });
 
+    // Also activate/deactivate all motorcycles owned by this user
+    const motoSnap = await db.collection('motorcycles').where('ownerId', '==', userId).get();
+    const batch = db.batch();
+    motoSnap.docs.forEach(doc => {
+      batch.update(doc.ref, { active, updatedAt: FieldValue.serverTimestamp() });
+    });
+    if (!motoSnap.empty) await batch.commit();
+
     res.json({
       message: `User ${active ? 'activated' : 'deactivated'} successfully`,
       userId,
-      active
+      active,
+      motorcyclesUpdated: motoSnap.size
     });
   } catch (err) {
     next(err);
