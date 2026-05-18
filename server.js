@@ -62,17 +62,20 @@ async function createDefaultAdmin() {
   }
 }
 
-const ALLOWED_ORIGINS = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'https://alertvibefrontend.vercel.app',
-  'https://alertvibefrontend-ochre.vercel.app',
-];
-
 const app = express();
 
 app.use(cors({
-  origin: ALLOWED_ORIGINS,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (curl, mobile apps, Render health checks)
+    if (!origin) return callback(null, true);
+    // Allow localhost dev
+    if (origin.startsWith('http://localhost')) return callback(null, true);
+    // Allow any Vercel deployment of this project
+    if (origin.includes('alertvibefrontend') && origin.endsWith('.vercel.app')) return callback(null, true);
+    // Allow custom domain if set
+    if (origin === 'https://alertvibefrontend.vercel.app') return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
 
