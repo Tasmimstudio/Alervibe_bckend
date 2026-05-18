@@ -9,18 +9,12 @@ async function createAlert(req, res, next) {
     const { deviceId, message = 'Vibration detected', severity = 'high', meta = {} } = req.body;
     if (!deviceId) return res.status(400).json({ error: 'deviceId required' });
 
-    // Check if the motorcycle's owner account is active
+    // Block alert if motorcycle is deactivated
     const motoSnap = await db.collection('motorcycles').where('deviceCode', '==', deviceId).limit(1).get();
     if (!motoSnap.empty) {
       const moto = motoSnap.docs[0].data();
-      if (moto.active === false) {
+      if (moto.isActivated === false) {
         return res.status(200).json({ id: null, skipped: true, reason: 'motorcycle deactivated' });
-      }
-      if (moto.ownerId) {
-        const ownerDoc = await db.collection('users').doc(moto.ownerId).get();
-        if (ownerDoc.exists && ownerDoc.data().active === false) {
-          return res.status(200).json({ id: null, skipped: true, reason: 'owner account deactivated' });
-        }
       }
     }
 
