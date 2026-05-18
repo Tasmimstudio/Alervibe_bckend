@@ -112,10 +112,21 @@ async function toggleUserStatus(req, res, next) {
       updatedAt: FieldValue.serverTimestamp()
     });
 
+    // Also toggle isActivated on all motorcycles owned by this user
+    const motoSnap = await db.collection('motorcycles').where('ownerId', '==', userId).get();
+    if (!motoSnap.empty) {
+      const batch = db.batch();
+      motoSnap.docs.forEach(doc => {
+        batch.update(doc.ref, { isActivated: active, updatedAt: FieldValue.serverTimestamp() });
+      });
+      await batch.commit();
+    }
+
     res.json({
       message: `User ${active ? 'activated' : 'deactivated'} successfully`,
       userId,
-      active
+      active,
+      motorcyclesUpdated: motoSnap.size
     });
   } catch (err) {
     next(err);
