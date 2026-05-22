@@ -38,14 +38,14 @@ async function createAlert(req, res, next) {
 
     // Send FCM - here we broadcast to a topic "security"
     const notifTitles = {
-      critical: 'CRITICAL ALERT - Motorcycle Under Attack!',
-      high:     'TAMPERING ALERT - Your Motorcycle!',
-      medium:   'Vibration Detected on Your Motorcycle',
+      hard:   'HARD ALERT - Motorcycle Under Attack!',
+      medium: 'MEDIUM ALERT - Your Motorcycle!',
+      light:  'LIGHT ALERT - Vibration Detected on Your Motorcycle',
     };
     const notifBodies = {
-      critical: `Extreme vibration detected on ${deviceId}. Immediate action required!`,
-      high:     `Strong vibration detected on ${deviceId}. Possible tampering in progress!`,
-      medium:   `Low-level vibration detected on ${deviceId}. Stay alert.`,
+      hard:   `Extreme vibration detected on ${deviceId}. Immediate action required!`,
+      medium: `Strong vibration detected on ${deviceId}. Possible tampering in progress!`,
+      light:  `Low-level vibration detected on ${deviceId}. Stay alert.`,
     };
 
     const payload = {
